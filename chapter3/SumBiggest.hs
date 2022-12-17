@@ -3,7 +3,7 @@ module SumBiggest where
 import qualified Data.List
 
 {-
--- This is the first version, demonstrating typechecking works even if funciton is undefined
+-- This is the first version, demonstrating typechecking works even if function is undefined
 
 sumBiggest :: [[Int]] ->String
 sumBiggest allNums = undefined
