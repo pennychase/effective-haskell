@@ -9,6 +9,7 @@ data Expr = Lit Int
           | Div Expr Expr
         deriving Show
 
+-- evaluate Expr
 eval :: Expr -> Int
 eval expr =
     case expr of
@@ -21,7 +22,7 @@ eval expr =
         eval' :: (Int -> Int -> Int) -> Expr -> Expr -> Int
         eval' operator arg1 arg2 = operator (eval arg1) (eval arg2)
 
-
+-- Parse a string with arithmetic operators in prefix notation
 parse :: String -> Either String Expr
 parse str =
     case parse' (words str) of
@@ -51,6 +52,7 @@ parseBinary exprConstructor args =
                 Left err -> Left err
                 Right (secondArg, rest'') -> Right $ (exprConstructor firstArg secondArg, rest'')
 
+-- Parse a string and evaluate
 run :: String -> String
 run expr =
     case parse expr of
@@ -84,3 +86,25 @@ safeRun expr =
             case  safeEval expr' of
                 Left err' -> "Error: " <> err'
                 Right answer' -> "The answer is: " <> show answer'
+
+-- Exercise: Pretty printer for Expr
+-- Prettyprint the Expr and result of evaluation
+prettyPrint :: Expr -> String
+prettyPrint expr = prettyPrint' expr <> " = " <> (show $ eval expr)
+
+-- Print an Expr with infix operators and parentheses
+prettyPrint' :: Expr -> String
+prettyPrint' expr =
+    case expr of
+        Lit num -> show num
+        Sub arg1 arg2 -> prettyPrint'' " - " arg1 arg2
+        Add arg1 arg2 -> prettyPrint'' " + " arg1 arg2
+        Mul arg1 arg2 -> prettyPrint'' " * " arg1 arg2
+        Div arg1 arg2 -> prettyPrint'' " / " arg1 arg2
+    where
+        prettyPrint'' :: String -> Expr -> Expr -> String
+        prettyPrint'' operator arg1 arg2 =
+            case  arg2 of
+                Lit _ -> prettyPrint' arg1 <> operator <> prettyPrint' arg2 
+                _ -> prettyPrint' arg1 <> operator <> "( " <> prettyPrint' arg2 <> " )"
+     
