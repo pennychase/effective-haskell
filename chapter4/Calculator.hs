@@ -7,6 +7,7 @@ data Expr = Lit Int
           | Add Expr Expr
           | Mul Expr Expr
           | Div Expr Expr
+        deriving Show
 
 eval :: Expr -> Int
 eval expr =
@@ -57,3 +58,29 @@ run expr =
         Right expr' -> 
             let answer = show $ eval expr'
             in "The answer is: " <> answer
+
+
+-- Exercise: Write safeEval that returns error of division by 0
+safeEval :: Expr -> Either String Int
+safeEval expr =
+    case expr of
+        Lit num ->  Right num
+        Sub arg1 arg2 ->  eval' (-) arg1 arg2
+        Add arg1 arg2 ->  eval' (+) arg1 arg2
+        Mul arg1 arg2 ->  eval' (*) arg1 arg2
+        Div arg1 arg2 -> 
+            case safeEval arg2 of
+                Right 0 -> Left "Division by zero"
+                _ -> eval' div arg1 arg2
+    where
+        eval' :: (Int -> Int -> Int) -> Expr -> Expr -> Either String Int
+        eval' operator arg1 arg2 = Right $ operator (eval arg1) (eval arg2)
+
+safeRun :: String -> String
+safeRun expr =
+    case parse expr of
+        Left err -> "Error: " <> err
+        Right expr' -> 
+            case  safeEval expr' of
+                Left err' -> "Error: " <> err'
+                Right answer' -> "The answer is: " <> show answer'
