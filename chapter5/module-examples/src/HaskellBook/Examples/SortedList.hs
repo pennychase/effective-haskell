@@ -28,3 +28,7 @@ testMinimum input =
     where
         lis = makeSortedList input
 
+-- Can also test using Functor fmap:
+--    minimum <$> makeSortedList [5,7,4,9,2,8,6] => Just 2
+--    minimum <$> makeSortedList [] => Nothing
+
