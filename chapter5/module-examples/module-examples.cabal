@@ -19,10 +19,11 @@ library
     import:           warnings
     exposed-modules:  MyLib
                     , HaskellBook.Examples
-                    , ModuleDemo
-    other-modules:    HaskellBook.Examples.Introduction.CreatingModules
+                    , HaskellBook.Examples.Introduction.CreatingModules
                     , HaskellBook.Examples.SortedList
                     , HaskellBook.Examples.UserInfo
+                    , ModuleDemo
+    -- other-modules:  
     -- other-extensions:
     build-depends:    base ^>=4.17.0.0
     hs-source-dirs:   src
