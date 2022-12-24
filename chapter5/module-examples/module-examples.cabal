@@ -20,6 +20,7 @@ library
     exposed-modules:  MyLib
                     , HaskellBook.Examples.Introduction.CreatingModules
                     , HaskellBook.Examples.SortedList
+                    , HaskellBook.Examples.UserInfo
     -- other-modules:
     -- other-extensions:
     build-depends:    base ^>=4.17.0.0
