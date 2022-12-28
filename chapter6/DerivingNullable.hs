@@ -5,6 +5,7 @@ module DerivingVia where
 
 import Prelude hiding (null)
 import qualified Prelude (null)
+import Data.Kind
 
 -- Chapter 6 second exercise - provide API for using derving via to derive different types of Nullable for Maybe
 
@@ -33,11 +34,19 @@ instance Nullable a => Nullable (MyMaybe a) where
             Nothing -> True
             Just a -> isNull a
 
--- examples of using deriving via to derive Nullable instances for Maybe or MyMaybe
-newtype MaybeListInt = MaybeListInt { getMaybeListInt :: Maybe [Int]}
+-- Nullable instance of a Maybe [a] derived via MyMaybe
+newtype MaybeList1 a = MaybeList1 { getMaybeList1 :: Maybe [a] }
     deriving stock Show
-    deriving Nullable via (MyMaybe [Int])
+    deriving Nullable via (MyMaybe [a])
 
-newtype MaybeListString = MaybeListString { getMaybeListString :: Maybe String }
+-- Nullable instance of a Maybe [a] derived via Maybe
+newtype MaybeList2 a = MaybeList2{ getMaybeList2 :: Maybe [a] }
     deriving stock Show
-    deriving Nullable via (Maybe String)
+    deriving Nullable via (Maybe [a])
+
+
+
+
+
+
+
