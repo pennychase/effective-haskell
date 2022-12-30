@@ -1,0 +1,3 @@
+This is a file that we'll use to test the replace application.
+This application takes a pathname, a needle, and a replacement. The application reads the file
+and replaces every occurance of needle with replacement.
