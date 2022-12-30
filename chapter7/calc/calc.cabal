@@ -17,7 +17,7 @@ common warnings
 
 library
     import:           warnings
-    exposed-modules:   Calc
+    exposed-modules:  Calc
     -- other-modules:
     -- other-extensions:
     build-depends:    base ^>=4.17.0.0

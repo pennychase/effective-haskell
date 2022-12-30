@@ -14,10 +14,11 @@ createArgs strs =
 
 -- Part 2 - Pass in operator and numbers on command line
 main :: IO ()
-main = do
-  args <- Sys.getArgs
+main =
+  Sys.getArgs >>= \args ->
   let op = toOperator (head args)
-  let operands = createArgs (tail args)
-  case op of
-    Nothing -> putStrLn "Unknown operator"
-    (Just op') -> putStrLn . show $ calculate op' operands
+      operands = createArgs (tail args)
+  in
+    case op of
+      Nothing -> putStrLn "Unknown operator"
+      (Just op') -> putStrLn . show $ calculate op' operands
