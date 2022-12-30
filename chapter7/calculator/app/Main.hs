@@ -1,7 +1,7 @@
 module Main where
 
 import qualified System.Environment as Sys
-import Calc (Operator(..), calculate, toOperator)
+import Calculator (Operator(..), calculate, toOperator)
 
 createArgs :: [String] -> (Int, Int)
 createArgs strs =

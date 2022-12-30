@@ -1,4 +1,4 @@
-module Calc 
+module Calculator
     ( Operator (..)
     , calculate
     , toOperator
