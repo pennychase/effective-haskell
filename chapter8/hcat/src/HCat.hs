@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE TypeApplications #-}
 
 module HCat where
 
@@ -18,18 +19,21 @@ handleArgs =
                 []      -> Left "No filename provided"
                 _       -> Left "Multiple files not supported"
 
- 
+-- Handle errors uniformly by turning an Either into an IO Error
+eitherToErr :: Show a => Either a b -> IO b
+eitherToErr (Right a) = return a
+eitherToErr (Left e) = Exception.throwIO . IOError.userError $ show e
 
 runHCat :: IO ()
 runHCat = 
-    withErrorHandling $
+    handleIOError $
         handleArgs
-        >>= \case 
-        Left err -> putStrLn $ "Error processing: " <> err
-        Right fname -> readFile fname >>= putStrLn
+        >>= eitherToErr
+        >>= readFile
+        >>= putStrLn
     where
-        withErrorHandling :: IO () -> IO ()
-        withErrorHandling ioAction = Exception.catch ioAction handleErr
-        handleErr :: IOError -> IO ()
-        handleErr e = putStrLn "I ran into an error! " >> print e
+        handleIOError :: IO () -> IO ()
+        handleIOError ioAction =
+            Exception.catch ioAction $ 
+                \e -> print "I ran into an error" >> print @IOError e -- use @IOError instead of writing a handler
 
