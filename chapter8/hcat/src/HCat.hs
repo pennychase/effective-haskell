@@ -6,6 +6,8 @@ import qualified Control.Exception as Exception
 import qualified System.IO.Error as IOError
 import qualified System.Environment as Env
 
+
+-- Command line argument processing
 handleArgs :: IO (Either String FilePath)
 handleArgs =
     parseArgs <$> Env.getArgs
@@ -19,13 +21,15 @@ handleArgs =
  
 
 runHCat :: IO ()
-runHCat = Exception.catch
-    ( handleArgs 
+runHCat = 
+    withErrorHandling $
+        handleArgs
         >>= \case 
         Left err -> putStrLn $ "Error processing: " <> err
         Right fname -> readFile fname >>= putStrLn
-    ) handleErr
     where
+        withErrorHandling :: IO () -> IO ()
+        withErrorHandling ioAction = Exception.catch ioAction handleErr
         handleErr :: IOError -> IO ()
         handleErr e = putStrLn "I ran into an error! " >> print e
 
