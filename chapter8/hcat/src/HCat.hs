@@ -1,6 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module HCat where
 
@@ -8,11 +9,16 @@ import qualified Control.Exception as Exception
 import qualified Data.ByteString as BS
 import qualified Data.Text as Text
 import qualified Data.Text.IO as TextIO
-import qualified System.IO.Error as IOError
+import qualified Data.Time.Clock as Clock
+import qualified Data.Time.Format as TimeFormat
+import qualified Data.Time.Clock.POSIX as PosixClock
+import qualified System.Directory as Directory
 import qualified System.Environment as Env
 import qualified System.Info
 import System.IO 
+import qualified System.IO.Error as IOError
 import qualified System.Process as Process
+import qualified Text.Printf as Printf
 
 
 -- Command line argument processing
@@ -119,6 +125,62 @@ showPages (page:pages) =
     >>= \case
         Continue -> showPages pages
         Cancel -> return ()
+
+--
+-- Status Line
+--
+
+data FileInfo = FileInfo
+    { filePath :: FilePath
+    , fileSize :: Int
+    , fileMTime :: Clock.UTCTime
+    , fileReadable :: Bool
+    , fileWriteable :: Bool
+    , fileExecutable :: Bool
+} deriving Show
+
+
+fileInfo :: FilePath -> IO FileInfo
+fileInfo filePath =
+    Directory.getPermissions filePath >>= \perms ->
+        Directory.getModificationTime filePath >>= \mtime ->
+            BS.readFile filePath >>= \contents ->
+                let size = BS.length contents
+                in pure FileInfo
+                    { filePath = filePath
+                    , fileSize = size
+                    , fileMTime = mtime
+                    , fileReadable = Directory.readable perms
+                    , fileWriteable = Directory.writable perms
+                    , fileExecutable = Directory.executable perms
+                    }
+
+formatFileInfo :: FileInfo -> Int -> Int -> Int -> Text.Text
+formatFileInfo FileInfo{..} maxWidth totalPages currentPage =
+    let
+        statusLine = Text.pack $
+            Printf.printf
+                "%s / permissions: %s / %d bytes / modified: %s / page: %d of %d"
+                    filePath permissionString fileSize timestamp currentPage totalPages
+        permissionString = 
+            [ if fileReadable then 'r' else '-'
+            , if fileWriteable then 'w' else '-'
+            , if fileExecutable then 'x' else '-'
+            ]
+        timestamp =
+            TimeFormat.formatTime TimeFormat.defaultTimeLocale "%F %T" fileMTime
+    in invertText (truncateStatus statusLine)
+    where
+        invertText inputStr =
+            let
+                reverseVideo = "\^[[7m"
+                resetVideo = "\^[[0m"
+            in reverseVideo <> inputStr <> resetVideo
+        truncateStatus statusLine 
+            | maxWidth <= 3 = ""
+            | Text.length statusLine > maxWidth = Text.take (maxWidth - 3) statusLine <> "..."
+            | otherwise = statusLine
+
 
 runHCat :: IO ()
 runHCat = 
