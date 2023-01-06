@@ -90,12 +90,18 @@ getTerminalSize =
                     in pure $ ScreenDimensions lines' cols'
 
 
-paginate :: ScreenDimensions -> Text.Text -> [Text.Text]
-paginate (ScreenDimensions rows columns) text =
-    let unwrappedLines = Text.lines text
-        wrappedLines = concatMap (wordWrap columns) unwrappedLines
-        pageLines = groupsOf rows unwrappedLines
-    in map Text.unlines pageLines
+paginate :: ScreenDimensions -> FileInfo -> Text.Text -> [Text.Text]
+paginate (ScreenDimensions rows columns) finfo text =
+    let rows' = rows - 1
+        wrappedLines = concatMap (wordWrap columns) (Text.lines text)
+        pages = map (Text.unlines . padTo rows') $ groupsOf rows' wrappedLines
+        pageCount = length pages
+        statusLines = map (formatFileInfo finfo columns pageCount) [1..pageCount]
+    in zipWith (<>) pages statusLines
+    where
+        padTo :: Int -> [Text.Text] -> [Text.Text]
+        padTo lineCount rowsToPad = take lineCount $ rowsToPad <> repeat ""
+
 
 -- Getting User Input
 data ContinueCancel = Continue | Cancel 
@@ -141,19 +147,18 @@ data FileInfo = FileInfo
 
 
 fileInfo :: FilePath -> IO FileInfo
-fileInfo filePath =
-    Directory.getPermissions filePath >>= \perms ->
-        Directory.getModificationTime filePath >>= \mtime ->
-            BS.readFile filePath >>= \contents ->
-                let size = BS.length contents
-                in pure FileInfo
-                    { filePath = filePath
-                    , fileSize = size
-                    , fileMTime = mtime
-                    , fileReadable = Directory.readable perms
-                    , fileWriteable = Directory.writable perms
-                    , fileExecutable = Directory.executable perms
-                    }
+fileInfo filePath = do
+    perms <- Directory.getPermissions filePath 
+    mtime <- Directory.getModificationTime filePath
+    size <- BS.length <$> BS.readFile filePath 
+    pure FileInfo
+        { filePath = filePath
+        , fileSize = size
+        , fileMTime = mtime
+        , fileReadable = Directory.readable perms
+        , fileWriteable = Directory.writable perms
+        , fileExecutable = Directory.executable perms
+        }
 
 formatFileInfo :: FileInfo -> Int -> Int -> Int -> Text.Text
 formatFileInfo FileInfo{..} maxWidth totalPages currentPage =
@@ -183,14 +188,13 @@ formatFileInfo FileInfo{..} maxWidth totalPages currentPage =
 
 
 runHCat :: IO ()
-runHCat = 
-    handleArgs
-    >>= eitherToErr
-    >>= flip openFile ReadMode
-    >>= TextIO.hGetContents
-    >>= \contents ->
-        getTerminalSize >>= \termSize ->
-            let pages = paginate termSize contents
-            in showPages pages
+runHCat = do
+    targetFilePath <- eitherToErr =<< handleArgs
+    contents <- TextIO.hGetContents =<< openFile targetFilePath ReadMode
+    termSize <- getTerminalSize 
+    hSetBuffering stdout NoBuffering
+    finfo <- fileInfo targetFilePath
+    let pages = paginate termSize finfo contents
+    showPages pages
 
 
