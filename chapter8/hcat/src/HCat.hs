@@ -33,6 +33,9 @@ an empty String). In any case, we continue using default dimensions.
 2. multiple files
 Refactored runHCat into hcatFile, which pages a single file, and runHCat which gets a list of filepaths
 from the command line and maps hcatFile over the list.
+
+3. scroll backwards
+Maintain a list of viewed pages. When user types a 'b' the top of this list is returned to the list of pages.
 -}
 
 -- Command line argument processing
@@ -140,7 +143,7 @@ paginate (ScreenDimensions rows columns) finfo text =
 
 
 -- Getting User Input
-data ContinueCancel = Continue | Cancel 
+data ContinueCancel = Continue | Backwards | Cancel 
     deriving (Eq, Show)
 
 getContinue :: IO ContinueCancel
@@ -150,6 +153,7 @@ getContinue =
     >> hGetChar stdin
     >>= \case
         ' ' -> pure Continue
+        'b' -> pure Backwards
         'q' -> pure Cancel
         _ -> getContinue
 
@@ -158,14 +162,17 @@ getContinue =
 clearScreen :: IO ()
 clearScreen = BS.putStr "\^[[1J\^[[1;1H"
 
-showPages :: [Text.Text] -> IO ()
-showPages [] = pure ()
-showPages (page:pages) =
+showPages :: [Text.Text] -> [Text.Text] -> IO ()
+showPages [] _ = pure ()
+showPages (page:pages) viewed =
     clearScreen
     >> TextIO.putStrLn page
     >> getContinue
     >>= \case
-        Continue -> showPages pages
+        Continue -> showPages pages (page:viewed)
+        Backwards -> if null viewed
+                     then showPages (page:pages) viewed
+                     else showPages ((head viewed):page:pages) (tail viewed)
         Cancel -> return ()
 
 --
@@ -230,7 +237,7 @@ hcatFile targetFilePath = do
     hSetBuffering stdout NoBuffering
     finfo <- fileInfo targetFilePath
     let pages = paginate termSize finfo contents
-    showPages pages
+    showPages pages []
 
 runHCat :: IO ()
 runHCat = do
