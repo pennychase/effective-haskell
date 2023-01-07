@@ -7,6 +7,7 @@ module HCat where
 
 import qualified Control.Exception as Exception
 import qualified Data.ByteString as BS
+import Data.Char (isDigit)
 import qualified Data.Text as Text
 import qualified Data.Text.IO as TextIO
 import qualified Data.Time.Clock as Clock
@@ -19,18 +20,18 @@ import System.IO
 import qualified System.IO.Error as IOError
 import qualified System.Process as Process
 import qualified Text.Printf as Printf
+import qualified Text.Read as Text
 
 
 -- Command line argument processing
-handleArgs :: IO (Either String FilePath)
+handleArgs :: IO (Either String [FilePath])
 handleArgs =
     parseArgs <$> Env.getArgs
     where
         parseArgs argumentList =
             case argumentList of
-                [fname] -> Right fname
                 []      -> Left "No filename provided"
-                _       -> Left "Multiple files not supported"
+                fnames ->  Right fnames
 
 -- Handle errors uniformly by turning an Either into an IO Error
 eitherToErr :: Show a => Either a b -> IO b
@@ -71,6 +72,25 @@ data ScreenDimensions = ScreenDimensions
     , screenColumns :: Int
     } deriving Show
 
+data TputArg = Lines | Cols
+
+tputDefaults :: TputArg -> Int
+tputDefaults arg =
+    case arg of
+        Lines -> 25
+        Cols -> 80
+
+argToString :: TputArg -> String
+argToString arg =
+    case arg of
+        Lines -> "lines"
+        Cols -> "cols"
+
+stringToInt :: String -> Either String Int
+stringToInt s = 
+    case filter isDigit s of
+        "" -> Left "Not a number"
+        digits -> Right (read digits)
 
 getTerminalSize :: IO ScreenDimensions
 getTerminalSize =
@@ -80,14 +100,18 @@ getTerminalSize =
         _other -> pure $ ScreenDimensions 25 80
     where
         tPutScreenDimensions :: IO ScreenDimensions
-        tPutScreenDimensions =
-            Process.readProcess "tput" ["lines"] ""
-            >>= \lines ->
-                Process.readProcess "tput" ["cols"] ""
-                >>= \ cols ->
-                    let lines' = read $ init lines
-                        cols' = read $ init cols
-                    in pure $ ScreenDimensions lines' cols'
+        tPutScreenDimensions = do
+            lines <- tryTput Lines
+            cols <- tryTput Cols
+            pure $ ScreenDimensions lines cols
+        tryTput arg = do
+            result <- Exception.try (Process.readProcess "tput" [argToString arg] "") :: IO (Either Exception.SomeException String)
+            case result of
+                (Left _) -> pure $ tputDefaults arg
+                (Right value) -> case stringToInt value of
+                    (Left _) -> pure $ tputDefaults arg
+                    (Right value') -> pure value'
+
 
 
 paginate :: ScreenDimensions -> FileInfo -> Text.Text -> [Text.Text]
@@ -187,14 +211,18 @@ formatFileInfo FileInfo{..} maxWidth totalPages currentPage =
             | otherwise = statusLine
 
 
-runHCat :: IO ()
-runHCat = do
-    targetFilePath <- eitherToErr =<< handleArgs
+hcatFile :: FilePath -> IO ()
+hcatFile targetFilePath = do
     contents <- TextIO.hGetContents =<< openFile targetFilePath ReadMode
     termSize <- getTerminalSize 
     hSetBuffering stdout NoBuffering
     finfo <- fileInfo targetFilePath
     let pages = paginate termSize finfo contents
     showPages pages
+
+runHCat :: IO ()
+runHCat = do
+    targetFilePaths <- eitherToErr =<< handleArgs
+    mapM_ hcatFile targetFilePaths
 
 
