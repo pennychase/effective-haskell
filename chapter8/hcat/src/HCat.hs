@@ -22,6 +22,18 @@ import qualified System.Process as Process
 import qualified Text.Printf as Printf
 import qualified Text.Read as Text
 
+{-
+Exercises
+
+1. tput edge cases
+To handle any issues from the Process.readaProcess call (e.g., tput not found), catch
+any exce[tion. To handle malformed input from tput, filter out any non-digits (this could produce
+an empty String). In any case, we continue using default dimensions.
+
+2. multiple files
+Refactored runHCat into hcatFile, which pages a single file, and runHCat which gets a list of filepaths
+from the command line and maps hcatFile over the list.
+-}
 
 -- Command line argument processing
 handleArgs :: IO (Either String [FilePath])
