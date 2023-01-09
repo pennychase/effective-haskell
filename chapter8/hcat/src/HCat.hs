@@ -1,11 +1,11 @@
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module HCat where
 
 import qualified Control.Exception as Exception
+import Control.Monad
 import qualified Data.ByteString as BS
 import Data.Char (isDigit)
 import qualified Data.Text as Text
@@ -36,6 +36,9 @@ from the command line and maps hcatFile over the list.
 
 3. scroll backwards
 Maintain a list of viewed pages. When user types a 'b' the top of this list is returned to the list of pages.
+
+4. help
+Display a help screen, shown when user hits "?". Initial version displays single screen and exits when user hits "q"
 -}
 
 -- Command line argument processing
@@ -143,7 +146,7 @@ paginate (ScreenDimensions rows columns) finfo text =
 
 
 -- Getting User Input
-data ContinueCancel = Continue | Backwards | Cancel 
+data ContinueCancel = Continue | Backwards | Help | Cancel 
     deriving (Eq, Show)
 
 getContinue :: IO ContinueCancel
@@ -155,25 +158,49 @@ getContinue =
         ' ' -> pure Continue
         'b' -> pure Backwards
         'q' -> pure Cancel
+        '?' -> pure Help
         _ -> getContinue
 
--- Paging
+-- Display
 
 clearScreen :: IO ()
 clearScreen = BS.putStr "\^[[1J\^[[1;1H"
 
 showPages :: [Text.Text] -> [Text.Text] -> IO ()
 showPages [] _ = pure ()
-showPages (page:pages) viewed =
+showPages pages@(p:ps) viewed =
     clearScreen
-    >> TextIO.putStrLn page
+    >> TextIO.putStrLn p
     >> getContinue
     >>= \case
-        Continue -> showPages pages (page:viewed)
+        Continue -> showPages ps (p:viewed)
         Backwards -> if null viewed
-                     then showPages (page:pages) viewed
-                     else showPages ((head viewed):page:pages) (tail viewed)
+                     then showPages pages viewed
+                     else showPages ((head viewed):pages) (tail viewed)
+        Help -> showHelp pages viewed
         Cancel -> return ()
+
+showHelp :: [Text.Text] -> [Text.Text] -> IO ()
+showHelp pages viewed = do
+    clearScreen 
+    TextIO.putStrLn helpText
+    key <- getContinue'
+    when (key == Cancel) (showPages pages viewed)
+    where
+        helpText :: Text.Text
+        helpText = "HCat is a simple pager written in Haskell.\nUsage: hcat file ...\n\
+            \Within the program you can use the following commands:\n\
+            \   <space>: display the next page\n\
+            \   b: display the previous page\n\
+            \   ?: dislpay this text\n\
+            \   q: quit"
+        getContinue' =
+            hSetBuffering stdin NoBuffering
+            >> hSetEcho stdin False
+            >> hGetChar stdin
+            >>= \case
+                'q' -> pure Cancel
+                _ -> getContinue'
 
 --
 -- Status Line
