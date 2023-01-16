@@ -31,11 +31,14 @@ classifyFile fname = do
         (False, True) -> FileTypeRegularFile
         _otherwise    -> FileTypeOther
 
+-- How to call
+-- filenames: traverseDirectory "/tmp/test1" $ \file -> print file
+-- size of filenames: traverseDirectory "/tmp/test1" $ \file -> print $ length file
+-- file sizes: traverseDirectory "/tmp/test1" $ \file -> countBytes file >>= print
 
-traverseDirectory :: FilePath -> (FilePath -> a) -> IO [a]
+traverseDirectory :: FilePath -> (FilePath -> IO ()) -> IO ()
 traverseDirectory rootPath action = do
     seenRef <- newIORef Set.empty
-    resultRef <- newIORef []
 
     let
         haveSeenDirectory canonicalPath =
@@ -53,7 +56,7 @@ traverseDirectory rootPath action = do
                     classification <- classifyFile canonicalPath
                     case classification of
                         FileTypeOther -> pure ()
-                        FileTypeRegularFile -> modifyIORef resultRef (\results -> action file : results)
+                        FileTypeRegularFile -> action file
                         FileTypeDirectory -> do
                             alreadyProcessed <- haveSeenDirectory canonicalPath
                             when (not alreadyProcessed) $ do
@@ -61,16 +64,38 @@ traverseDirectory rootPath action = do
                                 traverseSubdirectory canonicalPath
 
     traverseSubdirectory (dropSuffix "/" rootPath)
-    readIORef resultRef
+
+-- Recreate the original version by collecting results of the IO action in an IORef
+traverseDirectory' :: FilePath -> (FilePath -> a) -> IO [a]
+traverseDirectory' rootPath action = do
+    resultsRef <- newIORef []
+    traverseDirectory rootPath $ \file -> do
+        modifyIORef resultsRef (action file :)
+    readIORef resultsRef
 
 -- Actions to pass
 
--- If called as 'traverseDirectory <dir> countBytes' nothing is returned since returns IO [IO (FilePath, Integer)]
--- can call as 'join . fmap sequence $ traverseDirectory <dir> countBytes'
 countBytes :: FilePath -> IO (FilePath, Integer)
 countBytes path = do
     bytes <- fromIntegral . ByteString.length <$> ByteString.readFile path
     pure (path, bytes)
+
+-- Using IORef to maintain state to enable a single directory traversal and store one file in memory
+longestContents :: FilePath -> IO ByteString.ByteString 
+longestContents rootPath = do
+    contentsRef <- newIORef ByteString.empty
+    let
+        takeLongrestFile a b =
+            if ByteString.length a >= ByteString.length b
+                then a
+                else b
+
+    traverseDirectory rootPath $ \file -> do
+        contents <- ByteString.readFile file
+        modifyIORef contentsRef (takeLongrestFile contents)
+
+    readIORef contentsRef
+
 
 main :: IO ()
 main = pure ()
