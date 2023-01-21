@@ -11,11 +11,12 @@ import Data.Time.Clock ( diffUTCTime
                        )
 import Data.Maybe ( fromMaybe )
 import Text.Printf
+import System.CPUTime
 
 data AppMetrics = AppMetrics
     { successCount :: Int
     , failureCount :: Int
-    , callDuration :: Map.Map String Int
+    , callDuration :: Map.Map String Double
     } deriving (Eq, Show)
 
 newtype Metrics = Metrics { appMetricsStore :: IORef AppMetrics }
@@ -38,8 +39,10 @@ tickFailure :: Metrics ->  IO ()
 tickFailure (Metrics metrics) = modifyIORef metrics $ \m ->
     m { failureCount = 1 + failureCount m }
 
-timeFunction :: Metrics -> String -> IO a -> IO a
-timeFunction (Metrics metrics) actionName action = do
+-- This is the timing code from the book, but everything was returning 0 (clock resolution?)
+{-
+timeFunction' :: Metrics -> String -> IO a -> IO a
+timeFunction' (Metrics metrics) actionName action = do
     startTime <- getCurrentTime
     result <- action
     endTime <- getCurrentTime
@@ -48,6 +51,25 @@ timeFunction (Metrics metrics) actionName action = do
         let
             oldDurationValue = fromMaybe 0 $ Map.lookup actionName (callDuration oldMetrics)
             runDuration = floor . nominalDiffTimeToSeconds $ diffUTCTime endTime startTime
+            newDurationValue = oldDurationValue + runDuration
+        in oldMetrics { callDuration = Map.insert actionName newDurationValue $ callDuration oldMetrics}
+
+    pure result
+-}
+
+-- This code uses getCPUTime and returns the result as a double so we have fractional seconds.
+-- Uses the code in the timeIt library to do the timing (similar to the blook but using getCPUTime)
+-- and return the result in seconds
+timeFunction :: Metrics -> String -> IO a -> IO a
+timeFunction (Metrics metrics) actionName action = do
+    startTime <- getCPUTime
+    result <- action
+    endTime <- getCPUTime
+
+    modifyIORef metrics $ \oldMetrics ->
+        let
+            oldDurationValue = fromMaybe 0 $ Map.lookup actionName (callDuration oldMetrics)
+            runDuration = fromIntegral (endTime - startTime) * 1e-12
             newDurationValue = oldDurationValue + runDuration
         in oldMetrics { callDuration = Map.insert actionName newDurationValue $ callDuration oldMetrics}
 
@@ -61,17 +83,7 @@ displayMetrics (Metrics metrics) =
             putStrLn $ "sucesses: " <> show successCount
             putStrLn $ "failures: " <> show failureCount
             for_ (Map.assocs callDuration) $ \(k,v) ->
-                putStrLn $ printf "Time spent in \"%s\": %d" k v
-
-
-
-testSuccess :: IO ()
-testSuccess = do
-    m <- newMetrics
-    tickSuccess m
-    readIORef (appMetricsStore m) >>= print
-    tickSuccess m
-    readIORef (appMetricsStore m) >>= print
+                putStrLn $ printf "Time spent in \"%s\": %6.2fs" k v
 
 -- Initial implementation
 metrics :: IO (IORef AppMetrics)
