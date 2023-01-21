@@ -1,6 +1,6 @@
 {-# LANGUAGE TypeApplications #-}
 
-module Main where
+module DirectoryTraversal where
 
 import Control.Exception
 import Control.Monad
@@ -10,6 +10,8 @@ import Data.List
 import System.Directory
 import qualified Data.Set as Set
 import qualified Data.ByteString as ByteString
+
+import Metrics
 
 
 dropSuffix :: String -> String -> String
@@ -32,12 +34,12 @@ classifyFile fname = do
         _otherwise    -> FileTypeOther
 
 -- How to call
--- filenames: traverseDirectory "/tmp/test1" $ \file -> print file
--- size of filenames: traverseDirectory "/tmp/test1" $ \file -> print $ length file
--- file sizes: traverseDirectory "/tmp/test1" $ \file -> countBytes file >>= print
+-- filenames: traverseDirectory <metrics> <dir> $ \file -> print file
+-- size of filenames: traverseDirectory <metrics> <dir> $ \file -> print $ length file
+-- file sizes: traverseDirectory <metrics> <dir> $ \file -> countBytes file >>= print
 
-traverseDirectory :: FilePath -> (FilePath -> IO ()) -> IO ()
-traverseDirectory rootPath action = do
+traverseDirectory :: Metrics -> FilePath -> (FilePath -> IO ()) -> IO ()
+traverseDirectory metrics rootPath action = do
     seenRef <- newIORef Set.empty
 
     let
@@ -48,41 +50,36 @@ traverseDirectory rootPath action = do
             modifyIORef seenRef $ Set.insert canonicalPath
 
         traverseSubdirectory subdirPath = do
-            contents <- listDirectory subdirPath
-            for_ contents $ \file' ->
-                handle @IOException (\_ -> pure ()) $ do
-                    let file = subdirPath <> "/" <> file'
-                    canonicalPath <- canonicalizePath file
-                    classification <- classifyFile canonicalPath
-                    case classification of
-                        FileTypeOther -> pure ()
-                        FileTypeRegularFile -> action file
-                        FileTypeDirectory -> do
-                            alreadyProcessed <- haveSeenDirectory canonicalPath
-                            when (not alreadyProcessed) $ do
-                                addDirectoryToSeen canonicalPath
-                                traverseSubdirectory canonicalPath
+            timeFunction metrics "traversweSubdirectory" $ do
+                contents <- listDirectory subdirPath
+                for_ contents $ \file' ->
+                    handle @IOException (\ex -> print ex >> tickFailure metrics) $ do
+                        let file = subdirPath <> "/" <> file'
+                        canonicalPath <- canonicalizePath file
+                        classification <- classifyFile canonicalPath
+                        case classification of
+                            FileTypeOther -> pure ()
+                            FileTypeRegularFile -> action file
+                            FileTypeDirectory -> do
+                                alreadyProcessed <- haveSeenDirectory canonicalPath
+                                when (not alreadyProcessed) $ do
+                                    addDirectoryToSeen canonicalPath
+                                    traverseSubdirectory canonicalPath
+                tickSuccess metrics
+                --pure result
 
     traverseSubdirectory (dropSuffix "/" rootPath)
 
--- Recreate the original version by collecting results of the IO action in an IORef
-traverseDirectory' :: FilePath -> (FilePath -> a) -> IO [a]
-traverseDirectory' rootPath action = do
-    resultsRef <- newIORef []
-    traverseDirectory rootPath $ \file -> do
-        modifyIORef resultsRef (action file :)
-    readIORef resultsRef
 
 -- Actions to pass
-
 countBytes :: FilePath -> IO (FilePath, Integer)
 countBytes path = do
     bytes <- fromIntegral . ByteString.length <$> ByteString.readFile path
     pure (path, bytes)
 
 -- Using IORef to maintain state to enable a single directory traversal and store one file in memory
-longestContents :: FilePath -> IO ByteString.ByteString 
-longestContents rootPath = do
+longestContents :: Metrics -> FilePath -> IO ByteString.ByteString 
+longestContents metrics rootPath = do
     contentsRef <- newIORef ByteString.empty
     let
         takeLongrestFile a b =
@@ -90,14 +87,16 @@ longestContents rootPath = do
                 then a
                 else b
 
-    traverseDirectory rootPath $ \file -> do
+    traverseDirectory metrics rootPath $ \file -> do
         contents <- ByteString.readFile file
         modifyIORef contentsRef (takeLongrestFile contents)
 
     readIORef contentsRef
 
+-- Directory processing with Metrics
+-- Traverse directory. For each regular file, print the word count and update character frequency historgram.
+-- At the end, print out histogram and metrics.
 
-main :: IO ()
-main = pure ()
+
 
 
