@@ -1,0 +1,167 @@
+-- Lazy
+
+sucesses: 10228
+failures: 10722
+Time spent in "TextIO.readFile":   1.34s
+Time spent in "histogram":   0.01s
+Time spent in "print histogram":  28.36s
+Time spent in "traverseSubdirectory":  54.72s
+Time spent in "wordcount":   1.10s
+      36,914,952 bytes allocated in the heap
+       9,042,504 bytes copied during GC
+       1,439,088 bytes maximum residency (8 sample(s))
+          56,152 bytes maximum slop
+               5 MiB total memory in use (0 MB lost due to fragmentation)
+
+                                     Tot time (elapsed)  Avg pause  Max pause
+  Gen  0        29 colls,     0 par    0.004s   0.005s     0.0002s    0.0004s
+  Gen  1         8 colls,     0 par    0.016s   0.019s     0.0024s    0.0078s
+
+  TASKS: 5 (1 bound, 4 peak workers (4 total), using -N1)
+
+  SPARKS: 0 (0 converted, 0 overflowed, 0 dud, 0 GC'd, 0 fizzled)
+
+  INIT    time    0.000s  (  0.002s elapsed)
+  MUT     time    0.011s  ( 36.887s elapsed)
+  GC      time    0.020s  (  0.024s elapsed)
+  EXIT    time    0.000s  (  0.012s elapsed)
+  Total   time    0.031s  ( 36.925s elapsed)
+
+  Alloc rate    3,369,997,443 bytes per MUT second
+
+  Productivity  35.4% of total user, 99.9% of total elapsed
+
+
+-- modifyIORef'
+
+sucesses: 10228
+failures: 10722
+Time spent in "TextIO.readFile":   1.38s
+Time spent in "histogram":  28.63s
+Time spent in "print histogram":   0.08s
+Time spent in "traverseSubdirectory": 244.85s
+Time spent in "wordcount":   1.14s
+      36,914,984 bytes allocated in the heap
+       7,828,456 bytes copied during GC
+       1,439,088 bytes maximum residency (7 sample(s))
+          56,152 bytes maximum slop
+               5 MiB total memory in use (0 MB lost due to fragmentation)
+
+                                     Tot time (elapsed)  Avg pause  Max pause
+  Gen  0        30 colls,     0 par    0.004s   0.005s     0.0002s    0.0003s
+  Gen  1         7 colls,     0 par    0.011s   0.012s     0.0018s    0.0033s
+
+  TASKS: 5 (1 bound, 4 peak workers (4 total), using -N1)
+
+  SPARKS: 0 (0 converted, 0 overflowed, 0 dud, 0 GC'd, 0 fizzled)
+
+  INIT    time    0.000s  (  0.001s elapsed)
+  MUT     time    0.010s  ( 37.342s elapsed)
+  GC      time    0.015s  (  0.017s elapsed)
+  EXIT    time    0.000s  (  0.011s elapsed)
+  Total   time    0.026s  ( 37.371s elapsed)
+
+  Alloc rate    3,553,275,964 bytes per MUT second
+
+  Productivity  40.7% of total user, 99.9% of total elapsed
+
+
+  -- seq
+
+sucesses: 10228
+failures: 10722
+Time spent in "TextIO.readFile":   1.38s
+Time spent in "histogram":  28.58s
+Time spent in "print histogram":   0.08s
+Time spent in "traverseSubdirectory": 244.68s
+Time spent in "wordcount":   1.14s
+      36,915,016 bytes allocated in the heap
+       7,834,528 bytes copied during GC
+       1,439,088 bytes maximum residency (7 sample(s))
+          56,152 bytes maximum slop
+               5 MiB total memory in use (0 MB lost due to fragmentation)
+
+                                     Tot time (elapsed)  Avg pause  Max pause
+  Gen  0        30 colls,     0 par    0.004s   0.005s     0.0002s    0.0003s
+  Gen  1         7 colls,     0 par    0.013s   0.016s     0.0023s    0.0069s
+
+  TASKS: 5 (1 bound, 4 peak workers (4 total), using -N1)
+
+  SPARKS: 0 (0 converted, 0 overflowed, 0 dud, 0 GC'd, 0 fizzled)
+
+  INIT    time    0.000s  (  0.002s elapsed)
+  MUT     time    0.011s  ( 37.291s elapsed)
+  GC      time    0.017s  (  0.021s elapsed)
+  EXIT    time    0.000s  (  0.012s elapsed)
+  Total   time    0.028s  ( 37.326s elapsed)
+
+  Alloc rate    3,471,087,541 bytes per MUT second
+
+  Productivity  37.7% of total user, 99.9% of total elapsed
+
+
+  -- $!
+
+sucesses: 10228
+failures: 10722
+Time spent in "TextIO.readFile":   1.38s
+Time spent in "histogram":  28.55s
+Time spent in "print histogram":   0.08s
+Time spent in "traverseSubdirectory": 244.65s
+Time spent in "wordcount":   1.14s
+      36,915,016 bytes allocated in the heap
+       7,834,528 bytes copied during GC
+       1,439,088 bytes maximum residency (7 sample(s))
+          56,152 bytes maximum slop
+               5 MiB total memory in use (0 MB lost due to fragmentation)
+
+                                     Tot time (elapsed)  Avg pause  Max pause
+  Gen  0        30 colls,     0 par    0.004s   0.004s     0.0001s    0.0003s
+  Gen  1         7 colls,     0 par    0.013s   0.017s     0.0024s    0.0082s
+
+  TASKS: 5 (1 bound, 4 peak workers (4 total), using -N1)
+
+  SPARKS: 0 (0 converted, 0 overflowed, 0 dud, 0 GC'd, 0 fizzled)
+
+  INIT    time    0.000s  (  0.002s elapsed)
+  MUT     time    0.011s  ( 37.314s elapsed)
+  GC      time    0.017s  (  0.021s elapsed)
+  EXIT    time    0.000s  (  0.012s elapsed)
+  Total   time    0.028s  ( 37.350s elapsed)
+
+  Alloc rate    3,440,676,297 bytes per MUT second
+
+  Productivity  38.1% of total user, 99.9% of total elapsed
+
+  -- Bang Pattern in let
+
+  sucesses: 10228
+failures: 10722
+Time spent in "TextIO.readFile":   1.37s
+Time spent in "histogram":  28.60s
+Time spent in "print histogram":   0.08s
+Time spent in "traverseSubdirectory": 244.51s
+Time spent in "wordcount":   1.14s
+      36,914,368 bytes allocated in the heap
+       9,042,216 bytes copied during GC
+       1,439,040 bytes maximum residency (8 sample(s))
+          56,200 bytes maximum slop
+               5 MiB total memory in use (0 MB lost due to fragmentation)
+
+                                     Tot time (elapsed)  Avg pause  Max pause
+  Gen  0        29 colls,     0 par    0.004s   0.004s     0.0002s    0.0003s
+  Gen  1         8 colls,     0 par    0.015s   0.019s     0.0023s    0.0077s
+
+  TASKS: 5 (1 bound, 4 peak workers (4 total), using -N1)
+
+  SPARKS: 0 (0 converted, 0 overflowed, 0 dud, 0 GC'd, 0 fizzled)
+
+  INIT    time    0.000s  (  0.002s elapsed)
+  MUT     time    0.011s  ( 37.378s elapsed)
+  GC      time    0.019s  (  0.023s elapsed)
+  EXIT    time    0.000s  (  0.011s elapsed)
+  Total   time    0.030s  ( 37.414s elapsed)
+
+  Alloc rate    3,491,050,501 bytes per MUT second
+
+  Productivity  35.6% of total user, 99.9% of total elapsed

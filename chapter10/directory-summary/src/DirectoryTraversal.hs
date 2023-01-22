@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE BangPatterns #-}
 
 module DirectoryTraversal where
 
@@ -104,6 +105,12 @@ longestContents metrics rootPath = do
 -- Traverse directory. For each regular file, print the word count and update character frequency historgram.
 -- At the end, print out histogram and metrics.
 
+-- Experiment with strictness (which lines should be uncommented)
+-- 1. Bang pattern: use !newHistogram and writeIORef
+-- 2. Strict IORef: use modifyIORef'
+-- 3. Seq: use `seq`
+-- 4. $! : use $!
+{-
 directorySummaryWithMetrics :: FilePath -> IO ()
 directorySummaryWithMetrics root = do
     metrics <- newMetrics
@@ -121,8 +128,12 @@ directorySummaryWithMetrics root = do
             let 
                 addCharToHistogram histogram char =
                     Map.insertWith (+) char 1 histogram
+                -- !newHistogram = Text.foldl' addCharToHistogram oldHistogram contents   -- Bang  Pattern
                 newHistogram = Text.foldl' addCharToHistogram oldHistogram contents
-            writeIORef histogramRef newHistogram
+            -- writeIORef histogramRef newHistogram                        -- Lazy
+            modifyIORef' histogramRef (const newHistogram)              -- Strict version of IORef function
+            -- newHistogram `seq` writeIORef histogramRef newHistogram     -- Use seq to reduce first arg to WHNF
+            -- writeIORef histogramRef $! newHistogram                     -- Use $! to reduce second arg to WHNF
 
     timeFunction metrics "print histogram" $ do
         histogram <- readIORef histogramRef
@@ -132,8 +143,40 @@ directorySummaryWithMetrics root = do
 
     displayMetrics metrics
 
+-}
 
+writeIORef' :: IORef a -> a -> IO ()
+writeIORef' ref !val = writeIORef ref val
 
+data FileStats = FileStats !(Map.Map Char Int)
+
+directorySummaryWithMetrics :: FilePath -> IO ()
+directorySummaryWithMetrics root = do
+    metrics <- newMetrics
+    histogramRef <- newIORef (FileStats Map.empty)
+    traverseDirectory metrics root $ \file -> do
+        putStrLn $ file <> ": "
+        contents <- timeFunction metrics "TextIO.readFile" $ TextIO.readFile file
+
+        timeFunction metrics "wordcount" $
+            let wordCount = length $ Text.words contents
+            in putStrLn $ "    word count: " <> show wordCount
+
+        timeFunction metrics "histogram" $ do
+            (FileStats oldHistogram) <- readIORef histogramRef
+            let 
+                addCharToHistogram histogram char =
+                    Map.insertWith (+) char 1 histogram
+                newHistogram = FileStats $ Text.foldl' addCharToHistogram oldHistogram contents
+            writeIORef' histogramRef newHistogram   
+
+    timeFunction metrics "print histogram" $ do
+        (FileStats histogram) <- readIORef histogramRef
+        putStrLn "Histogram Data:"
+        for_ (Map.toList histogram) $ \(char, count) ->
+            putStrLn $ printf "    %c: %d" char count
+
+    displayMetrics metrics
 
 
 
