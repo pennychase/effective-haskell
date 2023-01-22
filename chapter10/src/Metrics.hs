@@ -59,7 +59,7 @@ timeFunction' (Metrics metrics) actionName action = do
 
 -- This code uses getCPUTime and returns the result as a double so we have fractional seconds.
 -- Uses the code in the timeIt library to do the timing (similar to the blook but using getCPUTime)
--- and return the result in seconds
+-- and return the result in seconds (multiplying by 1e-12 to convert)
 timeFunction :: Metrics -> String -> IO a -> IO a
 timeFunction (Metrics metrics) actionName action = do
     startTime <- getCPUTime

@@ -1,4 +1,7 @@
 module Main where
 
+import System.Environment (getArgs)
+import DirectoryTraversal
+
 main :: IO ()
-main = putStrLn "Hello, Haskell!"
+main = getArgs >>= directorySummaryWithMetrics . head

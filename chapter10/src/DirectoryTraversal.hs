@@ -124,10 +124,12 @@ directorySummaryWithMetrics root = do
                 newHistogram = Text.foldl' addCharToHistogram oldHistogram contents
             writeIORef histogramRef newHistogram
 
-    histogram <- readIORef histogramRef
-    putStrLn "Histogram Data:"
-    for_ (Map.toList histogram) $ \(char, count) ->
-        putStrLn $ printf "    %c: %d" char count
+    timeFunction metrics "print histogram" $ do
+        histogram <- readIORef histogramRef
+        putStrLn "Histogram Data:"
+        for_ (Map.toList histogram) $ \(char, count) ->
+            putStrLn $ printf "    %c: %d" char count
+
     displayMetrics metrics
 
 
