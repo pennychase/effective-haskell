@@ -1,5 +1,5 @@
 cabal-version:      3.0
-name:               chapter10
+name:               directory-summary
 version:            0.1.0.0
 synopsis:
 
@@ -51,7 +51,7 @@ executable directory-summary
         directory ^>=1.3.6.2,
         bytestring ^>=0.11.3.1,
         text ^>=1.2.5.0,
-        chapter10
+        directory-summary
 
     hs-source-dirs:   app
     default-language: Haskell2010
