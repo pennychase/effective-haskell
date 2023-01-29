@@ -165,3 +165,37 @@ Time spent in "wordcount":   1.14s
   Alloc rate    3,491,050,501 bytes per MUT second
 
   Productivity  35.6% of total user, 99.9% of total elapsed
+
+
+  -- Bang Patterns to write our own writeIORef' and use strict FileStats type
+
+sucesses: 10228
+failures: 10722
+Time spent in "TextIO.readFile":   1.37s
+Time spent in "histogram":  28.61s
+Time spent in "print histogram":   0.08s
+Time spent in "traverseSubdirectory": 244.11s
+Time spent in "wordcount":   1.13s
+      36,917,896 bytes allocated in the heap
+       7,834,288 bytes copied during GC
+       1,439,064 bytes maximum residency (7 sample(s))
+          56,176 bytes maximum slop
+               5 MiB total memory in use (0 MB lost due to fragmentation)
+
+                                     Tot time (elapsed)  Avg pause  Max pause
+  Gen  0        30 colls,     0 par    0.004s   0.004s     0.0001s    0.0003s
+  Gen  1         7 colls,     0 par    0.010s   0.013s     0.0019s    0.0056s
+
+  TASKS: 5 (1 bound, 4 peak workers (4 total), using -N1)
+
+  SPARKS: 0 (0 converted, 0 overflowed, 0 dud, 0 GC'd, 0 fizzled)
+
+  INIT    time    0.000s  (  0.001s elapsed)
+  MUT     time    0.010s  ( 37.394s elapsed)
+  GC      time    0.014s  (  0.017s elapsed)
+  EXIT    time    0.000s  (  0.012s elapsed)
+  Total   time    0.024s  ( 37.425s elapsed)
+
+  Alloc rate    3,683,685,491 bytes per MUT second
+
+  Productivity  41.6% of total user, 99.9% of total elapsed
